@@ -36,10 +36,9 @@ class _HomePageState extends State<HomePage> {
         return;
       }
 
-      var data = await sqlHelper.db!.rawQuery(
-        """SELECT * FROM tasks WHERE name LIKE ?""",
-        ['%${widget.id}%'],
-      );
+     var data = await sqlHelper.db!.rawQuery(
+      """SELECT * FROM tasks WHERE id LIKE '%${widget.id}%';""");
+      
 
       setState(() {
         tasks = data.isNotEmpty
