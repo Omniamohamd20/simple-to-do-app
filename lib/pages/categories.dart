@@ -76,7 +76,7 @@ class _CategoriesPageState extends State<CategoriesPage> {
                         SELECT * FROM Categories
                         WHERE name LIKE '%$value%';
                       """);
-                      categories = result.isEmpty
+                      categories = result.isNotEmpty
                           ? result
                               .map((item) => CategoryData.fromJson(item))
                               .toList()
@@ -111,7 +111,7 @@ class _CategoriesPageState extends State<CategoriesPage> {
                     onTap: () {
                     Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (ctx) => HomePage()),
+                        MaterialPageRoute(builder: (ctx) => HomePage(id: categories[index].id!)),
                       );
                     },
                   );

@@ -7,7 +7,8 @@ import 'package:simple_todo_app/widgets/task_card.dart';
 import '../helpers/sql_helper.dart';
 
 class HomePage extends StatefulWidget {
-  const HomePage({super.key});
+  final int id;
+  const HomePage({super.key,required this.id});
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -35,7 +36,10 @@ class _HomePageState extends State<HomePage> {
         return;
       }
 
-      var data = await sqlHelper.db!.rawQuery("""SELECT * FROM tasks;""");
+      var data = await sqlHelper.db!.rawQuery(
+        """SELECT * FROM tasks WHERE name LIKE ?""",
+        ['%${widget.id}%'],
+      );
 
       setState(() {
         tasks = data.isNotEmpty
@@ -57,9 +61,7 @@ class _HomePageState extends State<HomePage> {
         title: const Text('tasks'),
         actions: [
           IconButton(
-            onPressed: () {
-           
-            },
+            onPressed: () {},
             icon: const Icon(Icons.menu_open_outlined),
           ),
         ],
