@@ -2,13 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
 import 'package:simple_todo_app/helpers/sql_helper.dart';
 
-class AddNote extends StatefulWidget {
+class Addtask extends StatefulWidget {
  
   @override
-  State<AddNote> createState() => _AddNoteState();
+  State<Addtask> createState() => _Addtaskstate();
 }
 
-class _AddNoteState extends State<AddNote> {
+class _Addtaskstate extends State<Addtask> {
   var formKey = GlobalKey<FormState>();
 
   TextEditingController titleController = TextEditingController();
@@ -39,7 +39,7 @@ class _AddNoteState extends State<AddNote> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Add Note'),
+        title: Text('Add task'),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -63,11 +63,11 @@ class _AddNoteState extends State<AddNote> {
             SizedBox(height: 16),
             ElevatedButton(
               onPressed: () {
-                // Pass the new note back to the home page
+                // Pass the new task back to the home page
                 onSubmit();
                 Navigator.pop(context); // Go back after saving
               },
-              child: Text('Save Note'),
+              child: Text('Save task'),
             ),
           ],
         ),

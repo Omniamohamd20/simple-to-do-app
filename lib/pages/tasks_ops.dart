@@ -1,23 +1,24 @@
-import 'package:flutter/material.dart';
-import 'package:get_it/get_it.dart';
 import 'package:simple_todo_app/helpers/sql_helper.dart';
-import 'package:simple_todo_app/models/note.dart';
+import 'package:simple_todo_app/models/task.dart';
 import 'package:simple_todo_app/widgets/app_elevated_button.dart';
 import 'package:simple_todo_app/widgets/app_text_form_field.dart';
+import 'package:flutter/material.dart';
+import 'package:get_it/get_it.dart';
+import 'package:simple_todo_app/widgets/categories_drop_down.dart';
 
-class NotesOps extends StatefulWidget {
-  final Note? note;
-  const NotesOps({this.note, super.key});
+class TasksOps extends StatefulWidget {
+  final Task? task;
+  const TasksOps({this.task, super.key});
 
   @override
-  State<NotesOps> createState() => _NotesOpsState();
+  State<TasksOps> createState() => _TasksOpsState();
 }
 
-class _NotesOpsState extends State<NotesOps> {
-  final formKey = GlobalKey<FormState>();
-  late TextEditingController nameController; // Use late initialization
-  late TextEditingController contentController; // Use late initialization
-  late TextEditingController imageController; // Use late initialization
+class _TasksOpsState extends State<TasksOps> {
+  var formKey = GlobalKey<FormState>();
+  late TextEditingController nameController; // Use late
+  late TextEditingController contentController; // Use late
+  late TextEditingController imageController; // Use late
   bool isDone = false;
   int? selectedCategoryId;
 
@@ -28,21 +29,26 @@ class _NotesOpsState extends State<NotesOps> {
   }
 
   void setInitialData() {
-    // Initialize controllers
-    nameController = TextEditingController(text: widget.note?.name);
-    contentController = TextEditingController(text: widget.note?.content);
-    imageController = TextEditingController(
-        text: widget.note?.image); // Initialize image controller
+    nameController = TextEditingController(text: widget.task?.name ?? '');
+    contentController = TextEditingController(text: widget.task?.content ?? '');
+    imageController = TextEditingController(text: widget.task?.image ?? '');
+    isDone = widget.task?.isDone ?? false;
+    selectedCategoryId = widget.task?.categoryId;
+  }
 
-    isDone = widget.note?.isDone ?? false;
-    selectedCategoryId = widget.note?.categoryId;
+  @override
+  void dispose() {
+    nameController.dispose(); // Dispose controllers
+    contentController.dispose();
+    imageController.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.note != null ? 'Update' : 'Add New'),
+        title: Text(widget.task != null ? 'Update' : 'Add New'),
       ),
       body: Padding(
         padding: const EdgeInsets.all(20.0),
@@ -54,7 +60,7 @@ class _NotesOpsState extends State<NotesOps> {
                 AppTextFormField(
                   controller: nameController,
                   validator: (value) {
-                    if (value!.isEmpty) {
+                    if (value == null || value.isEmpty) {
                       return 'Name is required';
                     }
                     return null;
@@ -65,7 +71,7 @@ class _NotesOpsState extends State<NotesOps> {
                 AppTextFormField(
                   controller: contentController,
                   validator: (value) {
-                    if (value!.isEmpty) {
+                    if (value == null || value.isEmpty) {
                       return 'Description is required';
                     }
                     return null;
@@ -76,7 +82,7 @@ class _NotesOpsState extends State<NotesOps> {
                 AppTextFormField(
                   controller: imageController,
                   validator: (value) {
-                    if (value!.isEmpty) {
+                    if (value == null || value.isEmpty) {
                       return 'Image Url is required';
                     }
                     return null;
@@ -96,7 +102,16 @@ class _NotesOpsState extends State<NotesOps> {
                     ),
                     const SizedBox(width: 10),
                     const Text('Is Available'),
+                    
                   ],
+                ),
+                  CategoriesDropDown(
+                  selectedValue: selectedCategoryId,
+                  onChanged: (categoryId) {
+                    setState(() {
+                      selectedCategoryId = categoryId;
+                    });
+                  },
                 ),
                 const SizedBox(height: 20),
                 AppElevatedButton(
@@ -117,10 +132,10 @@ class _NotesOpsState extends State<NotesOps> {
     try {
       if (formKey.currentState!.validate()) {
         var sqlHelper = GetIt.I.get<SqlHelper>();
-        if (widget.note != null) {
+        if (widget.task != null) {
           // Update logic
           await sqlHelper.db!.update(
-            'notes',
+            'tasks',
             {
               'name': nameController.text,
               'content': contentController.text,
@@ -129,11 +144,10 @@ class _NotesOpsState extends State<NotesOps> {
               'categoryId': selectedCategoryId,
             },
             where: 'id =?',
-            whereArgs: [widget.note?.id],
+            whereArgs: [widget.task!.id], // Use ! safely
           );
         } else {
-          // Insert logic
-          await sqlHelper.db!.insert('notes', {
+          await sqlHelper.db!.insert('tasks', {
             'name': nameController.text,
             'content': contentController.text,
             'image': imageController.text,
@@ -142,30 +156,17 @@ class _NotesOpsState extends State<NotesOps> {
           });
         }
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            backgroundColor: Colors.green,
-            content: Text('Note saved successfully'),
-          ),
-        );
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          backgroundColor: Colors.green,
+          content: Text('task Saved Successfully'),
+        ));
         Navigator.pop(context, true);
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          backgroundColor: Colors.red,
-          content: Text('Error in creating note: $e'),
-        ),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        backgroundColor: Colors.red,
+        content: Text('Error In Create task: $e'),
+      ));
     }
-  }
-
-  @override
-  void dispose() {
-    // Dispose controllers to avoid memory leaks
-    nameController.dispose();
-    contentController.dispose();
-    imageController.dispose();
-    super.dispose();
   }
 }

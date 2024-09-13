@@ -1,4 +1,5 @@
 import 'package:simple_todo_app/helpers/sql_helper.dart';
+import 'package:simple_todo_app/pages/categories.dart';
 import 'package:simple_todo_app/pages/home_page.dart';
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
@@ -36,7 +37,7 @@ class MyApp extends StatelessWidget {
             primarySwatch: getMaterialColor(Color(0xff0157db))),
         useMaterial3: true,
       ),
-      home: HomePage(),
+      home: CategoriesPage(),
     );
   }
 

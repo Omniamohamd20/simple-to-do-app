@@ -1,4 +1,4 @@
-class Note {
+class Task {
   int? id;
   String? name;
   String? content;
@@ -8,11 +8,11 @@ class Note {
   String? categoryName;
   String? categoryDesc;
 // map to model
-  Note.fromJson(Map<String, dynamic> data) {
+  Task.fromJson(Map<String, dynamic> data) {
     id = data["id"];
     name = data["name"];
-   content = data["content"];
-    isDone = data["isDone"] == 1 ? true : false;   
+    content = data["content"];
+    isDone = data["isDone"] == 1 ? true : false;
     image = data["image"];
     categoryId = data["categoryId"];
     categoryName = data["categoryName"];

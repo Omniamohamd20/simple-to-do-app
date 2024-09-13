@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
-import 'package:simple_todo_app/models/note.dart';
-import 'package:simple_todo_app/pages/notes_ops.dart';
+import 'package:simple_todo_app/models/task.dart';
+import 'package:simple_todo_app/pages/tasks_ops.dart';
+import 'package:simple_todo_app/widgets/categories_drop_down.dart';
+import 'package:simple_todo_app/widgets/task_card.dart';
 import '../helpers/sql_helper.dart';
 
 class HomePage extends StatefulWidget {
@@ -12,7 +14,7 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  List<Note> notes = []; // Initialize with an empty list
+  List<Task> tasks = []; // Initialize with an empty list
   bool _showWidget = false;
   bool stockFilterPressed = false;
   bool availableFilterPressed = false;
@@ -20,23 +22,30 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
-    getNotes();
+    getTask();
   }
 
-  void getNotes() async {
+  void getTask() async {
     try {
       var sqlHelper = GetIt.I.get<SqlHelper>();
-      var data = await sqlHelper.db!.rawQuery("""SELECT * FROM Notes;""");
+
+      // Check if db is null
+      if (sqlHelper.db == null) {
+        print('Database is not initialized.');
+        return;
+      }
+
+      var data = await sqlHelper.db!.rawQuery("""SELECT * FROM tasks;""");
 
       setState(() {
-        notes = data.isNotEmpty
-            ? data.map((item) => Note.fromJson(item)).toList()
+        tasks = data.isNotEmpty
+            ? data.map((item) => Task.fromJson(item)).toList()
             : [];
       });
     } catch (e) {
       print('Error in fetching data: $e');
       setState(() {
-        notes = []; // Reset notes on error
+        tasks = []; // Reset tasks on error
       });
     }
   }
@@ -45,19 +54,13 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Products'),
+        title: const Text('tasks'),
         actions: [
           IconButton(
-            onPressed: () async {
-              var result = await Navigator.push(
-                context,
-                MaterialPageRoute(builder: (ctx) => NotesOps()),
-              );
-              if (result ?? false) {
-                getNotes();
-              }
+            onPressed: () {
+           
             },
-            icon: const Icon(Icons.add),
+            icon: const Icon(Icons.menu_open_outlined),
           ),
         ],
       ),
@@ -73,13 +76,20 @@ class _HomePageState extends State<HomePage> {
                   child: TextField(
                     onChanged: (value) async {
                       var sqlHelper = GetIt.I.get<SqlHelper>();
+
+                      // Check if db is null
+                      if (sqlHelper.db == null) {
+                        print('Database is not initialized.');
+                        return;
+                      }
+
                       var result = await sqlHelper.db!.rawQuery("""
-                        SELECT * FROM Notes
+                        SELECT * FROM tasks
                         WHERE name LIKE '%$value%';
                       """);
                       setState(() {
-                        notes = result.isNotEmpty
-                            ? result.map((item) => Note.fromJson(item)).toList()
+                        tasks = result.isEmpty
+                            ? result.map((item) => Task.fromJson(item)).toList()
                             : [];
                       });
                     },
@@ -92,58 +102,96 @@ class _HomePageState extends State<HomePage> {
                 // Other filter/sort buttons...
               ],
             ),
-            SizedBox(height: 10),
+            const SizedBox(height: 10),
             if (_showWidget)
               // Widget for filters
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Filter options here
-                ],
-              ),
-            const SizedBox(height: 10),
+
+              const SizedBox(height: 10),
+            // tasks[index].name ?? 'No content'
             Expanded(
               child: ListView.builder(
-                itemCount: notes.length,
+                itemCount: tasks.length,
                 itemBuilder: (context, index) {
-                  return ListTile(
-                    title: Text(notes[index].name ?? 'No content'),
-                    subtitle: Text('Details about ${notes[index].name}'),
-                    onTap: () {
-                      // Handle note tap
+                  return InkWell(
+                    child: TaskCard(
+                      title: tasks[index].name ?? 'No content',
+                      description: tasks[index].categoryDesc ?? 'No content',
+                      isCompleted: tasks[index].isDone ?? false,
+                      onTap: () {
+                        setState(() {
+                          var isdone = tasks[index].isDone;
+                          isdone = !isdone!;
+                        });
+                      },
+                    ),
+                    onLongPress: () {
+                      onDeleteRow(tasks[index].id!);
                     },
                   );
                 },
               ),
+            ),
+            FloatingActionButton(
+              onPressed: () async {
+                var result = await Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (ctx) => TasksOps()),
+                );
+                if (result ?? false) {
+                  getTask();
+                }
+                // Handle adding a new task
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Add a new task!')),
+                );
+              },
+              child: Icon(Icons.add),
+              tooltip: 'Add Task',
             ),
           ],
         ),
       ),
     );
   }
-}
-//   Future<void> getSortedData(String columnName, String sortType) async {
-//     var sqlHelper = GetIt.I.get<SqlHelper>();
-//     var data;
-//     if (sortType == "ASC") {
-//       data = await sqlHelper.db!.rawQuery("""
-// SELECT * FROM Products ORDER BY $columnName ASC;
-// """);
-//     }
-//     if (sortType == "DESC") {
-//       data = await sqlHelper.db!.rawQuery("""
-// SELECT * FROM Products ORDER BY $columnName DESC;
-// """);
-//     }
-//     if (data.isNotEmpty) {
-//       products = [];
-//       for (var item in data) {
-//         products!.add(Product.fromJson(item));
-//       }
-//     } else {
-//       products = [];
-//     }
-//     setState(() {});
-//   }
 
-  
+  Future<void> onDeleteRow(int id) async {
+    try {
+      var dialogResult = await showDialog(
+          context: context,
+          builder: (context) {
+            return AlertDialog(
+              title: const Text('Delete task'),
+              content: const Text('Are you sure you want to delete this task?'),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.pop(context, false);
+                  },
+                  child: const Text('Cancel'),
+                ),
+                TextButton(
+                  onPressed: () {
+                    Navigator.pop(context, true);
+                  },
+                  child: const Text('Delete'),
+                ),
+              ],
+            );
+          });
+
+      if (dialogResult ?? false) {
+        var sqlHelper = GetIt.I.get<SqlHelper>();
+        var result = await sqlHelper.db!.delete(
+          'tasks',
+          where: 'id =?',
+          whereArgs: [id],
+        );
+        if (result > 0) {
+          getTask();
+        }
+      }
+    } catch (e) {
+      print('Error In delete data $e');
+    }
+  }
+}

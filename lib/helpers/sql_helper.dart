@@ -4,22 +4,21 @@ import 'package:sqflite_common_ffi_web/sqflite_ffi_web.dart';
 
 class SqlHelper {
   Database? db;
-
   Future<void> init() async {
     try {
       if (kIsWeb) {
-        //web
         var factory = databaseFactoryFfiWeb;
         db = await factory.openDatabase('pos.db');
       } else {
         db = await openDatabase(
           'pos.db',
-          version: 1,
+          version: 2, // Increment this if you've changed the table structure
           onCreate: (db, version) {
             print('database created successfully');
           },
         );
       }
+      await createTables(); // Call to create tables
     } catch (e) {
       print('Error in creating database: $e');
     }
@@ -45,7 +44,7 @@ class SqlHelper {
 
       //creating products table
       batch.execute("""
-        Create table if not exists notes(
+        Create table if not exists tasks(
           id integer primary key,
           name text not null,
           content text not null,
@@ -56,9 +55,6 @@ class SqlHelper {
           on delete restrict
           ) 
           """);
-
-   
-
 
       var result = await batch.commit();
       print('results $result');
